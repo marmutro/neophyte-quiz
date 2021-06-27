@@ -24,6 +24,7 @@ type Msg
     | ToggleA
     | ToggleB
     | WindowResize Int Int
+    | ToggleAbout
 
 
 type alias Plant =
@@ -40,7 +41,7 @@ type alias PlantPair =
 plantPairs : List PlantPair
 plantPairs =
     [ { selection = Nothing
-      , a = { name = "amerikanische Goldrute", file = "amerikanische-Goldrute.jpg" }
+      , a = { name = "Goldrute", file = "Goldrute.jpg" }
       , b = { name = "echtes Johanniskraut", file = "echtes-Johanniskraut.jpg" }
       }
     , { selection = Nothing
@@ -71,6 +72,7 @@ type alias Model =
     , plantPairs : List PlantPair
     , windowWidth : Int
     , windowHeight : Int
+    , showAbout : Bool
     }
 
 
@@ -91,6 +93,7 @@ init flags =
       , plantPairs = plantPairs
       , windowWidth = flags.windowWidth
       , windowHeight = flags.windowHeight
+      , showAbout = False
       }
     , Cmd.none
     )
@@ -142,6 +145,9 @@ update msg model =
         WindowResize w h ->
             ( { model | windowWidth = w, windowHeight = h }, Cmd.none )
 
+        ToggleAbout ->
+            ( { model | showAbout = not model.showAbout }, Cmd.none )
+
         Next ->
             ( { model | index = model.index + 1 }, Cmd.none )
 
@@ -157,18 +163,23 @@ update msg model =
 
 allChosen : Model -> Bool
 allChosen model =
+    countChosen model == List.length model.plantPairs
+
+
+countChosen : Model -> Int
+countChosen model =
     let
-        sumSelected : PlantPair -> Bool -> Bool
+        sumSelected : PlantPair -> Int -> Int
         sumSelected entry acc =
             case entry.selection of
                 Just _ ->
-                    acc
+                    acc + 1
 
                 Nothing ->
-                    False
+                    acc
     in
     model.plantPairs
-        |> List.foldl sumSelected True
+        |> List.foldl sumSelected 0
 
 
 buildAnswer : Model -> String
@@ -200,12 +211,51 @@ view model =
     }
 
 
+viewInfo : Model -> Element Msg
+viewInfo model =
+    if model.showAbout then
+        el
+            [ height (px (model.windowHeight // 2))
+            , width shrink
+            , Border.solid
+            , Border.width 2
+            , Border.color fontColor
+            , padding 10
+            , Background.color screenBackgroundColor
+            , centerX
+            , centerY
+            , Font.color fontColor
+            , onClick ToggleAbout
+            ]
+            (textColumn [ spacing 5, width (fill |> maximum (model.windowWidth - 100)) ]
+                [ paragraph [ Font.center, Font.size 30 ] [ text "Welches ist der Neophyt?" ]
+                , paragraph [] [ text "Auf den folgenden Bilder muss der Neophyt markiert werden." ]
+                , paragraph []
+                    [ text "Wenn auf allen Bildpaaren eines ausgewählt ist, kann die Auswahl mit " ]
+                , paragraph []
+                    [ el [ Font.bold, Border.rounded 4, Border.width 1, padding 3 ] (text "Lösung abschicken") ]
+                , paragraph [] [ text " gemailt werden." ]
+                ]
+            )
+
+    else
+        none
+
+
 viewApp : Model -> Html Msg
 viewApp model =
-    Element.layout []
+    let
+        selectionScore : String
+        selectionScore =
+            String.fromInt (countChosen model) ++ "/" ++ String.fromInt (List.length model.plantPairs)
+    in
+    Element.layout [ inFront (viewInfo model) ]
         (column
             [ spacing 5, width fill, height fill, Font.color fontColor, Background.color screenBackgroundColor ]
-            [ el [ centerX, Font.center, Font.size 30 ] (text "Welches ist der Neophyt?")
+            [ row [ width fill ]
+                [ el [ centerX, Font.center, Font.size 30 ] (text "Neophyten Quiz")
+                , el (buttonStyle True ++ [ Font.size 30, alignRight, padding 10, onClick ToggleAbout ]) (text selectionScore)
+                ]
             , el
                 [ width fill, height (fill |> maximum (model.windowHeight - 200)) ]
                 (model.plantPairs
@@ -231,7 +281,10 @@ viewApp model =
                     )
                     ">>"
                 , if allChosen model then
-                    link (buttonStyle True)
+                    link
+                        (buttonStyle True
+                            ++ [ Font.size 30 ]
+                        )
                         { url = "mailto:irene.troxler@datazug.ch?subject=Neophyten-Quiz&body=" ++ buildAnswer model
                         , label = text "Lösung\nabschicken"
                         }
@@ -286,7 +339,7 @@ viewPlantPair model neophyte =
     responsive.layout [ width fill, height fill, spacing 5 ]
         [ column
             [ width fill, height fill ]
-            [ el [ centerX ] (text neophyte.a.name)
+            [ el [ centerX, Background.color screenBackgroundColor ] (text neophyte.a.name)
             , el
                 (border SelectA
                     ++ [ width fill, height fill, onClick ToggleA ]
@@ -294,7 +347,7 @@ viewPlantPair model neophyte =
                 (image responsive.scaleAttrs { src = neophyte.a.file, description = neophyte.a.name })
             ]
         , column [ width fill, height fill ]
-            [ el [ centerX ] (text neophyte.b.name)
+            [ el [ centerX, Background.color screenBackgroundColor ] (text neophyte.b.name)
             , el
                 (border SelectB
                     ++ [ width fill, height fill, onClick ToggleB ]
