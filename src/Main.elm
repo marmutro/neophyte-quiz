@@ -195,7 +195,7 @@ buildAnswer model =
 
 view : Model -> Browser.Document Msg
 view model =
-    { title = "PlantPairn Quiz"
+    { title = "Neophyten Quiz"
     , body = [ viewApp model ]
     }
 
@@ -205,14 +205,14 @@ viewApp model =
     Element.layout []
         (column
             [ spacing 5, width fill, height fill, Font.color fontColor, Background.color screenBackgroundColor ]
-            [ el [ centerX, Font.center, Font.size 30 ] (text "Neophyten Quiz")
-            , row
-                [ width fill ]
-                [ model.plantPairs
+            [ el [ centerX, Font.center, Font.size 30 ] (text "Welches ist der Neophyt?")
+            , el
+                [ width fill, height (fill |> maximum (model.windowHeight - 200)) ]
+                (model.plantPairs
                     |> getAt model.index
                     |> Maybe.map (viewPlantPair model)
                     |> Maybe.withDefault none
-                ]
+                )
             , row [ width fill, spacing 10 ]
                 [ viewButton
                     (if model.index > 0 then
@@ -230,15 +230,15 @@ viewApp model =
                         Nothing
                     )
                     ">>"
-                ]
-            , if allChosen model then
-                link (buttonStyle True)
-                    { url = "mailto:irene.troxler@datazug.ch?subject=Neophyten-Quiz&body=" ++ buildAnswer model
-                    , label = text "Lösung abschicken"
-                    }
+                , if allChosen model then
+                    link (buttonStyle True)
+                        { url = "mailto:irene.troxler@datazug.ch?subject=Neophyten-Quiz&body=" ++ buildAnswer model
+                        , label = text "Lösung\nabschicken"
+                        }
 
-              else
-                none
+                  else
+                    none
+                ]
             ]
         )
 
@@ -270,14 +270,20 @@ viewPlantPair model neophyte =
             else
                 []
 
-        imageLayout =
+        responsive =
             if model.windowWidth < model.windowHeight then
-                column [ width fill, spacing 5 ]
+                -- vertical
+                { layout = column
+                , scaleAttrs = [ width (fill |> maximum model.windowWidth), height (fill |> maximum ((model.windowHeight - 150) // 2)) ]
+                }
 
             else
-                row [ width fill, spacing 5 ]
+                -- horizontal
+                { layout = row
+                , scaleAttrs = [ width (fill |> maximum model.windowWidth), height (shrink |> maximum (model.windowHeight - 100)) ]
+                }
     in
-    imageLayout
+    responsive.layout [ width fill, height fill, spacing 5 ]
         [ column
             [ width fill, height fill ]
             [ el [ centerX ] (text neophyte.a.name)
@@ -285,16 +291,15 @@ viewPlantPair model neophyte =
                 (border SelectA
                     ++ [ width fill, height fill, onClick ToggleA ]
                 )
-                (image [ width fill, height fill ] { src = neophyte.a.file, description = neophyte.a.name })
+                (image responsive.scaleAttrs { src = neophyte.a.file, description = neophyte.a.name })
             ]
-        , column
-            [ width fill, height fill ]
+        , column [ width fill, height fill ]
             [ el [ centerX ] (text neophyte.b.name)
             , el
                 (border SelectB
                     ++ [ width fill, height fill, onClick ToggleB ]
                 )
-                (image [ width fill, height fill ] { src = neophyte.b.file, description = neophyte.b.name })
+                (image responsive.scaleAttrs { src = neophyte.b.file, description = neophyte.b.name })
             ]
         ]
 
