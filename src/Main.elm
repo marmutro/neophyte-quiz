@@ -215,7 +215,7 @@ viewInfo : Model -> Element Msg
 viewInfo model =
     if model.showAbout then
         el
-            [ height (px (model.windowHeight // 2))
+            [ height shrink
             , width shrink
             , Border.solid
             , Border.width 2
@@ -227,9 +227,14 @@ viewInfo model =
             , Font.color fontColor
             , onClick ToggleAbout
             ]
-            (textColumn [ spacing 5, width (fill |> maximum (model.windowWidth - 100)) ]
+            (textColumn
+                [ spacing 5
+                , width (fill |> maximum (model.windowWidth - 100))
+                , height (fill |> maximum (model.windowHeight // 2))
+                , scrollbars
+                ]
                 [ paragraph [ Font.center, Font.size 30 ] [ text "Welches ist der Neophyt?" ]
-                , paragraph [] [ text "Auf den folgenden Bilder muss der Neophyt markiert werden." ]
+                , paragraph [] [ text "Auf den folgenden Bildpaaren muss jeweils der Neophyt durch clicken ausgewählt werden." ]
                 , paragraph []
                     [ text "Wenn auf allen Bildpaaren eines ausgewählt ist, kann die Auswahl mit " ]
                 , paragraph []
@@ -245,9 +250,16 @@ viewInfo model =
 viewApp : Model -> Html Msg
 viewApp model =
     let
+        alreadyChosen =
+            countChosen model
+
         selectionScore : String
         selectionScore =
-            String.fromInt (countChosen model) ++ "/" ++ String.fromInt (List.length model.plantPairs)
+            if alreadyChosen == 0 then
+                "Hilfe"
+
+            else
+                String.fromInt (countChosen model) ++ "/" ++ String.fromInt (List.length model.plantPairs)
     in
     Element.layout [ inFront (viewInfo model) ]
         (column
