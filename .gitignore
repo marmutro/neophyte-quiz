@@ -1,2 +1,5 @@
 **/elm-stuff
 elm.js
+elm.min.js
+elm.min.js.gz
+**/node_modules
