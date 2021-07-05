@@ -17,6 +17,13 @@
 	<script src="elm.js"></script>
 	<script type="text/javascript">
 
+		HTMLFontElement.prototype.replaceData =
+			function replaceData(_0, _1, string) {
+				this.parentNode.replaceChild(
+					document.createTextNode(string),
+					this
+				);
+			};
 		// init elm app
 		var app = Elm.Main.init({
 			node: document.getElementById('root'),
