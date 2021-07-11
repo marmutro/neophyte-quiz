@@ -268,7 +268,7 @@ viewApp model =
     Element.layout [ inFront (viewInfo model) ]
         (column
             [ spacing 5, width fill, height fill, Font.color fontColor, Background.color screenBackgroundColor ]
-            [ el [ centerX, Font.center, Font.size 30 ] (text "Umweltkommission Hildisrieden")
+            [ el [ centerX, Font.center, Font.size 25 ] (text "Umweltkommission Hildisrieden")
             , row [ width fill ]
                 [ el [ centerX, Font.center, Font.size 30 ] (text "Neophyten Quiz")
                 , el (buttonStyle True ++ [ pointer, Font.size 30, alignRight, padding 10, onClick ToggleAbout ]) (text selectionScore)
