@@ -200,8 +200,12 @@ buildAnswer model =
                 Nothing ->
                     acc
     in
-    model.plantPairs
+    (model.plantPairs
         |> List.foldl sumSelected ("Meine Lösung lautet:" ++ linebreak)
+    )
+        ++ linebreak
+        ++ linebreak
+        ++ "Bitte Name und Adresse angegeben"
 
 
 view : Model -> Browser.Document Msg
@@ -264,9 +268,10 @@ viewApp model =
     Element.layout [ inFront (viewInfo model) ]
         (column
             [ spacing 5, width fill, height fill, Font.color fontColor, Background.color screenBackgroundColor ]
-            [ row [ width fill ]
+            [ el [ centerX, Font.center, Font.size 30 ] (text "Umweltkommission Hildisrieden")
+            , row [ width fill ]
                 [ el [ centerX, Font.center, Font.size 30 ] (text "Neophyten Quiz")
-                , el (buttonStyle True ++ [ Font.size 30, alignRight, padding 10, onClick ToggleAbout ]) (text selectionScore)
+                , el (buttonStyle True ++ [ pointer, Font.size 30, alignRight, padding 10, onClick ToggleAbout ]) (text selectionScore)
                 ]
             , el
                 [ width fill, height (fill |> maximum (model.windowHeight - 200)) ]
@@ -303,6 +308,13 @@ viewApp model =
 
                   else
                     none
+                ]
+            , row [ width fill, alignBottom, Font.size 10 ]
+                [ row [ alignLeft ]
+                    [ text "Powered by "
+                    , link [] { label = text "Musikgesellschaft Hildisrieden", url = "https://mg-hildisrieden.ch" }
+                    ]
+                , el [ alignRight ] (text "© Mumi")
                 ]
             ]
         )
