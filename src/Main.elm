@@ -12,6 +12,7 @@ import Html exposing (Html)
 import Html.Attributes
 import List exposing (sum)
 import List.Extra exposing (getAt)
+import Swiper
 
 
 main =
@@ -25,6 +26,7 @@ type Msg
     | ToggleB
     | WindowResize Int Int
     | ToggleAbout
+    | Swiped Swiper.SwipeEvent
 
 
 type alias Plant =
@@ -73,6 +75,7 @@ type alias Model =
     , windowWidth : Int
     , windowHeight : Int
     , showAbout : Bool
+    , swipingState : Swiper.SwipingState
     }
 
 
@@ -94,6 +97,7 @@ init flags =
       , windowWidth = flags.windowWidth
       , windowHeight = flags.windowHeight
       , showAbout = False
+      , swipingState = Swiper.initialSwipingState
       }
     , Cmd.none
     )
@@ -107,6 +111,20 @@ subscriptions model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
+        incIndex =
+            if model.index + 1 < List.length model.plantPairs then
+                model.index + 1
+
+            else
+                model.index
+
+        decIndex =
+            if model.index > 0 then
+                model.index - 1
+
+            else
+                model.index
+
         toggleSelected : Selection -> Maybe Selection -> Maybe Selection
         toggleSelected chosen selection =
             case selection of
@@ -149,16 +167,39 @@ update msg model =
             ( { model | showAbout = not model.showAbout }, Cmd.none )
 
         Next ->
-            ( { model | index = model.index + 1 }, Cmd.none )
+            ( { model | index = incIndex }, Cmd.none )
 
         Previous ->
-            ( { model | index = model.index - 1 }, Cmd.none )
+            ( { model | index = decIndex }, Cmd.none )
 
         ToggleA ->
             ( { model | plantPairs = toggle SelectA }, Cmd.none )
 
         ToggleB ->
             ( { model | plantPairs = toggle SelectB }, Cmd.none )
+
+        Swiped evt ->
+            let
+                ( newState, swipedLeft ) =
+                    Swiper.hasSwipedLeft evt model.swipingState
+
+                newIndex =
+                    if Swiper.touchFinished evt then
+                        case swipedLeft of
+                            Just swiped ->
+                                if swiped then
+                                    decIndex
+
+                                else
+                                    incIndex
+
+                            Nothing ->
+                                model.index
+
+                    else
+                        model.index
+            in
+            ( { model | swipingState = newState, index = newIndex }, Cmd.none )
 
 
 allChosen : Model -> Bool
@@ -359,8 +400,12 @@ viewPlantPair model neophyte =
                 { layout = row
                 , scaleAttrs = [ width (fill |> maximum model.windowWidth), height (shrink |> maximum (model.windowHeight - 100)) ]
                 }
+
+        onSwipe =
+            Swiper.onSwipeEvents Swiped
+                |> List.map htmlAttribute
     in
-    responsive.layout [ width fill, height fill, spacing 5 ]
+    responsive.layout ([ width fill, height fill, spacing 5 ] ++ onSwipe)
         [ column
             [ width fill, height fill ]
             [ el [ centerX, Background.color screenBackgroundColor ] (text neophyte.a.name)
